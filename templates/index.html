@@ -1,1 +1,262 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Resume ATS Analyzer</title>
 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #d6e0ef;
+            font-family: Arial;
+        }
+
+        .card {
+            background: #eef2f7;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            font-weight: bold;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        #loader {
+            display: none;
+            text-align: center;
+            margin: 15px 0;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        .dark-mode {
+            background: #0b1220;
+            color: white;
+        }
+
+        .dark-mode .card {
+            background: #111827;
+            color: white;
+        }
+
+        .dark-mode input,
+        .dark-mode textarea,
+        .dark-mode select {
+            background: #1f2937;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .card {
+                padding: 15px;
+            }
+            .header {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container mt-4">
+
+    <!-- HEADER -->
+    <div class="header">
+        🚀 AI Resume ATS Analyzer
+    </div>
+
+    <!-- TOGGLE -->
+    <button class="btn btn-dark mb-3" onclick="toggleTheme()">🌙 Toggle Theme</button>
+
+    <div class="card">
+
+        <!-- FORM -->
+        <form method="POST" enctype="multipart/form-data" onsubmit="showLoader()">
+
+            <label>Upload Resume (PDF)</label>
+            <input type="file" name="resume_file" class="form-control mb-2">
+
+          {% if result and result.filename %}
+
+<div class="alert alert-info mt-2">
+    📄 Uploaded Resume: <b>{{ result.filename }}</b>
+</div>
+
+<a href="{{ result.file_url }}" target="_blank" class="btn btn-primary btn-sm mb-2">
+    👁 View Resume
+</a>
+
+<a href="/clear" class="btn btn-outline-danger btn-sm mb-2">
+    🧹 Reset
+</a>
+
+{% endif %}
+{% if result and result.is_valid == False %}
+
+<div class="alert alert-danger">
+    ❌ This file does not look like a valid resume
+</div>
+
+<div class="alert alert-warning">
+    ⚠ Resume Confidence Score: {{ result.confidence }}
+</div>
+
+{% endif %}
+
+            <label>Paste Resume</label>
+            <textarea name="resume" class="form-control mb-2"></textarea>
+
+            <label class="fw-bold">Select Job Role</label>
+            <select name="job_role" class="form-select mb-3" required>
+
+                <option value="" disabled selected>Choose Job Role</option>
+
+                <option value="data scientist">Data Scientist</option>
+                <option value="data analyst">Data Analyst</option>
+                <option value="machine learning engineer">Machine Learning Engineer</option>
+                <option value="ai engineer">AI Engineer</option>
+
+                <option value="software engineer">Software Engineer</option>
+                <option value="web developer">Web Developer</option>
+                <option value="frontend developer">Frontend Developer</option>
+                <option value="backend developer">Backend Developer</option>
+                <option value="full stack developer">Full Stack Developer</option>
+
+                <option value="android developer">Android Developer</option>
+                <option value="ios developer">iOS Developer</option>
+
+                <option value="cloud engineer">Cloud Engineer</option>
+                <option value="devops engineer">DevOps Engineer</option>
+
+                <option value="cybersecurity analyst">Cybersecurity Analyst</option>
+                <option value="database administrator">Database Administrator</option>
+
+                <option value="business analyst">Business Analyst</option>
+                <option value="qa engineer">QA Engineer</option>
+
+                <option value="game developer">Game Developer</option>
+                <option value="embedded engineer">Embedded Engineer</option>
+
+                <option value="blockchain developer">Blockchain Developer</option>
+                <option value="data engineer">Data Engineer</option>
+                <option value="nlp engineer">NLP Engineer</option>
+
+            </select>
+
+            <label>Job Description (Optional)</label>
+            <textarea name="job_desc" class="form-control mb-3"></textarea>
+
+            <!-- BUTTONS -->
+            <button class="btn btn-primary w-100" type="submit">
+                Analyze Resume
+            </button>
+
+            <button type="reset" class="btn btn-outline-secondary w-100 mt-2">
+                🔄 Reset
+            </button>
+
+        </form>
+
+        <!-- LOADER -->
+        <div id="loader">
+            <div class="spinner-border text-primary"></div>
+            <p>Analyzing Resume...</p>
+        </div>
+
+        <!-- RESULT -->
+        {% if result %}
+
+        <div class="mt-4">
+
+            <h4>🎯 Detected Role: {{result.role}}</h4>
+
+            <h5>Status: <b>{{result.status}}</b></h5>
+
+            <h5>📊 Match Score: {{result.score}}%</h5>
+
+            <hr>
+
+            <h5>✔ Skills Found</h5>
+            {% for s in result.matched %}
+                <span class="badge bg-success m-1">✔ {{s}}</span>
+            {% endfor %}
+
+            <h5 class="mt-3">❌ Missing Skills</h5>
+            {% for s in result.missing %}
+                <span class="badge bg-danger m-1">✖ {{s}}</span>
+            {% endfor %}
+
+            <hr>
+
+            <h5>🔥 Best Job Roles For You</h5>
+            {% for role in result.best_roles %}
+                <div class="alert alert-primary p-2">
+                    👉 <b>{{ role.name }}</b><br>
+                    <small>Match Score: {{ role.score }}%</small><br>
+                    <small>{{ role.reason }}</small>
+                </div>
+            {% endfor %}
+
+            <hr>
+
+            <h5>💡 Suggestions</h5>
+            <ul>
+                {% for s in result.suggestions %}
+                <li>{{s}}</li>
+                {% endfor %}
+            </ul>
+
+            <!-- DOWNLOAD -->
+            <button onclick="window.print()" class="btn btn-success w-100 mt-3">
+                📄 Download Report
+            </button>
+
+        </div>
+
+        {% else %}
+
+        <a href="/clear" class="btn btn-outline-danger w-100 mt-2">
+    🧹 Clear History
+</a>
+
+        <div class="text-center text-muted mt-4">
+            <h5>No analysis yet</h5>
+            <p>Upload a resume to get ATS insights</p>
+        </div>
+
+        {% endif %}
+
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        🚀 Developed by Balaji Kadam<br>
+        <small>AI Resume ATS Analyzer (Learning Project)</small>
+    </div>
+
+</div>
+
+<script>
+function toggleTheme(){
+    document.body.classList.toggle("dark-mode");
+}
+
+function showLoader(){
+    document.getElementById("loader").style.display = "block";
+}
+</script>
+
+</body>
+</html>
